@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MoviesModule } from './movies/movies.module';
+import { ShowTimesModule } from './showtimes/showtimes.module';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { MoviesModule } from './movies/movies.module';
       autoLoadEntities: true,
       synchronize: true, // Auto-create tables (development only)
     }),
-    MoviesModule, // Register Movies Module
+    MoviesModule,
+    ShowTimesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
