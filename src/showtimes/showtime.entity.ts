@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique, JoinColumn } from 'typeorm';
 import { Movie } from '../movies/movie.entity';
 
 @Entity()
@@ -8,6 +8,7 @@ export class ShowTime {
   id: number;
 
   @ManyToOne(() => Movie, { eager: true }) // Each showtime belongs to a movie
+  @JoinColumn({ name: 'movie_id' })
   movie: Movie;
 
   @Column()
