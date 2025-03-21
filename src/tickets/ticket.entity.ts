@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique, Index } from 'typeorm';
 import { ShowTime } from '../showtimes/showtime.entity';
 
 @Entity()
@@ -7,13 +7,14 @@ export class Ticket {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => ShowTime, (showTime) => showTime.tickets, { eager: true })
+  @ManyToOne(() => ShowTime, { onDelete: 'CASCADE', eager: true }) // No inverse relation
+  @Index() // Improves query performance
   showTime: ShowTime;
 
   @Column()
   seatNumber: string;
 
-  @Column()
+  @Column({ length: 100 }) // Prevents excessively long names
   customerName: string;
 
   @Column({ default: false })
