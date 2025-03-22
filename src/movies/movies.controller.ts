@@ -1,33 +1,32 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UsePipes, ValidationPipe } from '@nestjs/common';
 import { MoviesService } from './movies.service';
 import { Movie } from './movie.entity';
+import { CreateMovieDto } from './dto/create-movie.dto';
+import { UpdateMovieDto } from './dto/update-movie.dto';
 
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
 
   @Post()
-  create(@Body() movieData: Partial<Movie>): Promise<Movie> {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  create(@Body() movieData: CreateMovieDto): Promise<Movie> {
     return this.moviesService.create(movieData);
   }
 
-  @Get()
+  @Get('all')
   findAll(): Promise<Movie[]> {
     return this.moviesService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: number): Promise<Movie | null> {
-    return this.moviesService.findOne(id);
+  @Post('update/:movieTitle')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  update(@Param('movieTitle') title: string, @Body() movieData: UpdateMovieDto): Promise<Movie | null> {
+    return this.moviesService.updateByTitle(title, movieData);
   }
 
-  @Put(':id')
-  update(@Param('id') id: number, @Body() movieData: Partial<Movie>): Promise<Movie> {
-    return this.moviesService.update(id, movieData);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: number): Promise<void> {
-    return this.moviesService.remove(id);
+  @Delete(':movieTitle')
+  remove(@Param('movieTitle') title: string): Promise<void> {
+    return this.moviesService.removeByTitle(title);
   }
 }

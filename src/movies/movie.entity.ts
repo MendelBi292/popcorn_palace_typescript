@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
-@Entity()  // This marks it as a database table
+@Entity()
 export class Movie {
   @PrimaryGeneratedColumn()
   id: number;
@@ -12,11 +12,11 @@ export class Movie {
   genre: string;
 
   @Column()
-  duration: number;  // Duration in minutes
+  duration: number;
 
-  @Column()
-  rating: string;  // Example: PG-13, R
+  @Column({ type: 'float' })
+  rating: number;
 
-  @Column()
-  release_year: number;
+  @Column({ type: 'int', nullable: false, default: 2000 }) 
+  releaseYear: number;
 }

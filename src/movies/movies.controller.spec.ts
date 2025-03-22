@@ -7,8 +7,16 @@ describe('MoviesController', () => {
   let service: MoviesService;
 
   const mockMoviesService = {
-    findAll: jest.fn(() => [{ id: 1, title: 'Movie 1' }]),
-    findOne: jest.fn((id) => ({ id, title: `Movie ${id}` })),
+    create: jest.fn(dto => Promise.resolve({ id: 1, ...dto })),
+    findAll: jest.fn(() => Promise.resolve([{ id: 1, title: 'Sample Movie Title', genre: 'Action', duration: 120, rating: 8.7, releaseYear: 2025 }])),
+    updateByTitle: jest.fn((title, dto) => {
+      if (title !== 'Sample Movie Title') throw new Error();
+      return Promise.resolve({ id: 1, ...dto });
+    }),
+    removeByTitle: jest.fn((title) => {
+      if (title !== 'Sample Movie Title') throw new Error();
+      return Promise.resolve();
+    }),
   };
 
   beforeEach(async () => {
@@ -25,11 +33,13 @@ describe('MoviesController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should return movies', async () => {
-    expect(await controller.findAll()).toEqual([{ id: 1, title: 'Movie 1' }]);
+  it('should create a movie with valid input', async () => {
+    const dto = { title: 'Sample Movie Title', genre: 'Action', duration: 120, rating: 8.7, releaseYear: 2025 };
+    expect(await controller.create(dto)).toEqual({ id: 1, ...dto });
   });
 
-  it('should return a single movie', async () => {
-    expect(await controller.findOne(1)).toEqual({ id: 1, title: 'Movie 1' });
+  it('should update a movie if found', async () => {
+    const dto = { genre: 'Comedy' };
+    expect(await controller.update('Sample Movie Title', dto)).toEqual({ id: 1, ...dto });
   });
 });
