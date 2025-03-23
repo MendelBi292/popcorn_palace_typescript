@@ -1,13 +1,16 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Param, UsePipes, ValidationPipe } from '@nestjs/common';
 import { ShowTimesService } from './showtimes.service';
 import { ShowTime } from './showtime.entity';
+import { CreateShowtimeDto } from './dto/create-showtime.dto';
+import { UpdateShowtimeDto } from './dto/update-showtime.dto';
 
 @Controller('showtimes')
 export class ShowTimesController {
   constructor(private readonly showTimesService: ShowTimesService) {}
 
   @Post()
-  create(@Body() showtimeData: Partial<ShowTime>): Promise<ShowTime> {
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  create(@Body() showtimeData: CreateShowtimeDto): Promise<ShowTime> {
     return this.showTimesService.create(showtimeData);
   }
 
@@ -21,8 +24,9 @@ export class ShowTimesController {
     return this.showTimesService.findOne(id);
   }
 
-  @Put(':id')
-  update(@Param('id') id: number, @Body() showtimeData: Partial<ShowTime>): Promise<ShowTime> {
+  @Post('update/:id')
+  @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
+  update(@Param('id') id: number, @Body() showtimeData: UpdateShowtimeDto): Promise<ShowTime> {
     return this.showTimesService.update(id, showtimeData);
   }
 
