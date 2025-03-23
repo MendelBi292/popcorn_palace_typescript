@@ -1,87 +1,60 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketService } from './tickets.service';
-import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Ticket } from './ticket.entity';
+import { ShowTime } from '../showtimes/showtime.entity';
+import { Repository } from 'typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { CreateTicketDto } from './dto/create-ticket.dto';
 
 describe('TicketService', () => {
   let service: TicketService;
-  let repository: Repository<Ticket>;
+  let ticketRepository: Repository<Ticket>;
+  let showTimeRepository: Repository<ShowTime>;
 
   const mockTicketRepository = {
-    find: jest.fn().mockResolvedValue([]),
     findOne: jest.fn(),
-    create: jest.fn().mockImplementation((dto) => dto),
-    save: jest.fn().mockImplementation((ticket) => Promise.resolve({ id: 1, ...ticket })),
-    update: jest.fn(),
-    delete: jest.fn(),
+    create: jest.fn().mockImplementation(dto => dto),
+    save: jest.fn().mockImplementation(ticket => Promise.resolve({ ...ticket, id: 'uuid-1234' })),
+  };
+
+  const mockShowTimeRepository = {
+    findOne: jest.fn(),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TicketService,
-        {
-          provide: getRepositoryToken(Ticket),
-          useValue: mockTicketRepository,
-        },
+        { provide: getRepositoryToken(Ticket), useValue: mockTicketRepository },
+        { provide: getRepositoryToken(ShowTime), useValue: mockShowTimeRepository },
       ],
     }).compile();
 
     service = module.get<TicketService>(TicketService);
-    repository = module.get<Repository<Ticket>>(getRepositoryToken(Ticket));
+    ticketRepository = module.get<Repository<Ticket>>(getRepositoryToken(Ticket));
+    showTimeRepository = module.get<Repository<ShowTime>>(getRepositoryToken(ShowTime));
+    jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  it('should create a ticket successfully', async () => {
+  it('should book a ticket successfully', async () => {
+    const dto: CreateTicketDto = { showtimeId: 1, seatNumber: 15, userId: '84438967-f68f-4fa0-b620-0f08217e76af' };
+    mockShowTimeRepository.findOne.mockResolvedValue({ id: 1, theater: 'Sample Theater', startTime: new Date(), endTime: new Date() });
     mockTicketRepository.findOne.mockResolvedValue(null);
-
-    const ticketData = { showTime: { id: 1 }, seatNumber: 'A1', customerName: 'John Doe' };
-    const result = await service.create(ticketData as any);
-
-    expect(result).toEqual({ id: 1, ...ticketData });
-    expect(repository.create).toHaveBeenCalledWith(ticketData);
-    expect(repository.save).toHaveBeenCalledWith(ticketData);
+    const result = await service.bookTicket(dto);
+    expect(result).toEqual({ bookingId: 'uuid-1234' });
   });
 
-  it('should not create a duplicate ticket for the same seat and showtime', async () => {
-    mockTicketRepository.findOne.mockResolvedValue({ id: 1 });
-
-    const ticketData = { showTime: { id: 1 }, seatNumber: 'A1', customerName: 'John Doe' };
-
-    await expect(service.create(ticketData as any)).rejects.toThrow(BadRequestException);
+  it('should throw NotFoundException if showtime does not exist', async () => {
+    const dto: CreateTicketDto = { showtimeId: 1, seatNumber: 15, userId: '84438967-f68f-4fa0-b620-0f08217e76af' };
+    mockShowTimeRepository.findOne.mockResolvedValue(null);
+    await expect(service.bookTicket(dto)).rejects.toThrow(NotFoundException);
   });
 
-  it('should find a ticket by id', async () => {
-    mockTicketRepository.findOne.mockResolvedValue({ id: 1, seatNumber: 'A1' });
-
-    const result = await service.findOne(1);
-
-    expect(result).toEqual({ id: 1, seatNumber: 'A1' });
-    expect(repository.findOne).toHaveBeenCalledWith({ where: { id: 1 } });
-  });
-
-  it('should throw NotFoundException if ticket not found', async () => {
-    mockTicketRepository.findOne.mockResolvedValue(null);
-
-    await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
-  });
-
-  it('should delete a ticket', async () => {
-    mockTicketRepository.findOne.mockResolvedValue({ id: 1 });
-
-    await service.delete(1);
-
-    expect(repository.delete).toHaveBeenCalledWith(1);
-  });
-
-  it('should throw NotFoundException when deleting a non-existent ticket', async () => {
-    mockTicketRepository.findOne.mockResolvedValue(null);
-
-    await expect(service.delete(999)).rejects.toThrow(NotFoundException);
+  it('should throw BadRequestException if seat is already booked', async () => {
+    const dto: CreateTicketDto = { showtimeId: 1, seatNumber: 15, userId: '84438967-f68f-4fa0-b620-0f08217e76af' };
+    mockShowTimeRepository.findOne.mockResolvedValue({ id: 1, theater: 'Sample Theater', startTime: new Date(), endTime: new Date() });
+    mockTicketRepository.findOne.mockResolvedValue({ id: 'uuid-1234' });
+    await expect(service.bookTicket(dto)).rejects.toThrow(BadRequestException);
   });
 });

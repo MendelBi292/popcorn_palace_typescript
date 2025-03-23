@@ -1,48 +1,38 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Ticket } from './ticket.entity';
+import { ShowTime } from '../showtimes/showtime.entity';
+import { CreateTicketDto } from './dto/create-ticket.dto';
 
 @Injectable()
 export class TicketService {
   constructor(
     @InjectRepository(Ticket)
     private readonly ticketRepository: Repository<Ticket>,
+    @InjectRepository(ShowTime)
+    private readonly showTimeRepository: Repository<ShowTime>,
   ) {}
 
-  async create(ticketData: Partial<Ticket>): Promise<Ticket> {
-    const existingTicket = await this.ticketRepository.findOne({
-      where: { showTime: ticketData.showTime, seatNumber: ticketData.seatNumber },
+  async bookTicket(dto: CreateTicketDto): Promise<{ bookingId: string }> {
+    // Ensure the showtime exists.
+    const showTime = await this.showTimeRepository.findOne({ where: { id: dto.showtimeId } });
+    if (!showTime) {
+      throw new NotFoundException('ShowTime not found');
+    }
+    // Check for an existing ticket for the same seat and showtime.
+    const existing = await this.ticketRepository.findOne({
+      where: { showTime, seatNumber: dto.seatNumber },
     });
-
-    if (existingTicket) {
-      throw new BadRequestException('Seat already booked for this showtime.');
+    if (existing) {
+      throw new BadRequestException('Seat already booked for this showtime');
     }
-
-    const ticket = this.ticketRepository.create(ticketData);
-    return this.ticketRepository.save(ticket);
-  }
-
-  async findAll(): Promise<Ticket[]> {
-    return this.ticketRepository.find();
-  }
-
-  async findOne(id: number): Promise<Ticket> {
-    const ticket = await this.ticketRepository.findOne({ where: { id } });
-    if (!ticket) {
-      throw new NotFoundException(`Ticket with ID ${id} not found.`);
-    }
-    return ticket;
-  }
-
-  async update(id: number, updateData: Partial<Ticket>): Promise<Ticket> {
-    await this.findOne(id);
-    await this.ticketRepository.update(id, updateData);
-    return this.findOne(id); // Return updated ticket
-  }
-
-  async delete(id: number): Promise<void> {
-    await this.findOne(id);
-    await this.ticketRepository.delete(id);
+    const ticket = this.ticketRepository.create({
+      showTime,
+      seatNumber: dto.seatNumber,
+      userId: dto.userId,
+    });
+    const savedTicket = await this.ticketRepository.save(ticket);
+    return { bookingId: savedTicket.id };
   }
 }

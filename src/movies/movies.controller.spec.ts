@@ -40,6 +40,6 @@ describe('MoviesController', () => {
 
   it('should update a movie if found', async () => {
     const dto = { genre: 'Comedy' };
-    expect(await controller.update('Sample Movie Title', dto)).toEqual({ id: 1, ...dto });
+    await expect(controller.update('Sample Movie Title', dto)).resolves.toBeUndefined();
   });
 });

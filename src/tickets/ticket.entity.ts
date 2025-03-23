@@ -1,22 +1,19 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, Unique, JoinColumn } from 'typeorm';
 import { ShowTime } from '../showtimes/showtime.entity';
 
 @Entity()
 @Unique(['showTime', 'seatNumber']) // Ensures no duplicate seat bookings for the same showtime
 export class Ticket {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @ManyToOne(() => ShowTime, { onDelete: 'CASCADE', eager: true }) // No inverse relation
-  @Index() // Improves query performance
+  @ManyToOne(() => ShowTime, { eager: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'showtime_id' })
   showTime: ShowTime;
 
   @Column()
-  seatNumber: string;
+  seatNumber: number;
 
-  @Column({ length: 100 }) // Prevents excessively long names
-  customerName: string;
-
-  @Column({ default: false })
-  isPaid: boolean;
+  @Column()
+  userId: string;
 }

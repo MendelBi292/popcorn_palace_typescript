@@ -1,29 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TicketController } from './tickets.controller';
 import { TicketService } from './tickets.service';
-import { Ticket } from './ticket.entity';
+import { CreateTicketDto } from './dto/create-ticket.dto';
 
 describe('TicketController', () => {
   let controller: TicketController;
   let service: TicketService;
 
   const mockTicketService = {
-    create: jest.fn((dto) => Promise.resolve({ id: 1, ...dto })),
-    findAll: jest.fn(() => Promise.resolve([{ id: 1, seatNumber: 'A1' }])),
-    findOne: jest.fn((id) => Promise.resolve({ id, seatNumber: 'A1' })),
-    update: jest.fn((id, dto) => Promise.resolve({ id, ...dto })),
-    delete: jest.fn(() => Promise.resolve()),
+    bookTicket: jest.fn(dto => Promise.resolve({ bookingId: 'uuid-1234' })),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TicketController],
-      providers: [
-        {
-          provide: TicketService,
-          useValue: mockTicketService,
-        },
-      ],
+      providers: [{ provide: TicketService, useValue: mockTicketService }],
     }).compile();
 
     controller = module.get<TicketController>(TicketController);
@@ -34,39 +25,10 @@ describe('TicketController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should create a ticket', async () => {
-    const ticketData = { showTime: { id: 1 }, seatNumber: 'A1', customerName: 'John Doe' };
-    const result = await controller.create(ticketData as any);
-
-    expect(result).toEqual({ id: 1, ...ticketData });
-    expect(service.create).toHaveBeenCalledWith(ticketData);
-  });
-
-  it('should get all tickets', async () => {
-    const result = await controller.findAll();
-
-    expect(result).toEqual([{ id: 1, seatNumber: 'A1' }]);
-    expect(service.findAll).toHaveBeenCalled();
-  });
-
-  it('should get a single ticket by id', async () => {
-    const result = await controller.findOne(1);
-
-    expect(result).toEqual({ id: 1, seatNumber: 'A1' });
-    expect(service.findOne).toHaveBeenCalledWith(1);
-  });
-
-  it('should update a ticket', async () => {
-    const updateData = { seatNumber: 'A2' };
-    const result = await controller.update(1, updateData as any);
-
-    expect(result).toEqual({ id: 1, ...updateData });
-    expect(service.update).toHaveBeenCalledWith(1, updateData);
-  });
-
-  it('should delete a ticket', async () => {
-    await controller.delete(1);
-
-    expect(service.delete).toHaveBeenCalledWith(1);
+  it('should book a ticket', async () => {
+    const dto: CreateTicketDto = { showtimeId: 1, seatNumber: 15, userId: '84438967-f68f-4fa0-b620-0f08217e76af' };
+    const result = await controller.book(dto);
+    expect(result).toEqual({ bookingId: 'uuid-1234' });
+    expect(service.bookTicket).toHaveBeenCalledWith(dto);
   });
 });
